@@ -1,16 +1,17 @@
-# MOJA LinePoint Analysis v. 1
-# Author: Frankie Gerraty (fgerraty@ucsc.edu/frankiegeraty@gmail.com)
+##########################################################################
+# MOJA Vegetation Analysis Project #######################################
+# Author: Frankie Gerraty (frankiegerraty@gmail.com; fgerraty@ucsc.edu) ##
+##########################################################################
+# LinePoint Preliminary Analysis v. 1 
 # -----------------------------------------------------------------------------
 
 # PART 0: Import Line Point Intercept Data ####
 
 LinePoint <- read_csv("MOJA_Analysis/data/processed/LinePoint.csv")
 
-
 # PART 1: Percent Cover of Litter ---------------------------------------------
 
 # Question: Does the percent cover of leaf litter vary with distance to well (water source)?
-
 
 ## Create new dataframe "litter" for litter analysis
 Litter <- LinePoint %>%  

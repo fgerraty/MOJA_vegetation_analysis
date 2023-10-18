@@ -2,9 +2,8 @@
 # MOJA Project ###########################################################
 # Author: Frankie Gerraty (frankiegerraty@gmail.com; fgerraty@ucsc.edu) ##
 ##########################################################################
-# Script 00: Import and Clean Dataseta ###################################
+# Script 01: Import and Clean Datasets ###################################
 #-------------------------------------------------------------------------
-
 
 ## Import Raw Datasets ####
 
@@ -29,11 +28,11 @@ LinePoint <- LinePoint_Raw %>%
   mutate(distance = if_else(point == "A" | point == "B" | 
                               point =="C" | point == "A(X)" | 
                               point == "C(X)", 100, #100m away points
-                            if_else(point == "D" | point =="E" |
-                                      point =="F" | point == "F(X)", 400, #400m away points
-                                    if_else(point == "G" | point =="H" | 
-                                              point =="I" | point == "I(X)" |
-                                              point == "J(X)" | point == "H(2)", 1600, 0)))) #1600m away points
+                    if_else(point == "D" | point =="E" |
+                              point =="F" | point == "F(X)", 400, #400m away points
+                    if_else(point == "G" | point =="H" | 
+                              point =="I" | point == "I(X)" |
+                              point == "J(X)" | point == "H(2)", 1600, 0)))) #1600m away points
 
 
 write_csv(LinePoint, "MOJA_Analysis/data/processed/LinePoint.csv")
@@ -61,11 +60,11 @@ BasalGap <- BasalGap_Raw %>%
   mutate(distance = if_else(point == "A" | point == "B" | 
                               point =="C" | point == "A(X)" | 
                               point == "C(X)", 100, #100m away points
-                            if_else(point == "D" | point =="E" |
-                                      point =="F" | point == "F(X)", 400, #400m away points
-                                    if_else(point == "G" | point =="H" | 
-                                              point =="I" | point == "I(X)" |
-                                              point == "J(X)" | point == "H(2)", 1600, 0)))) #1600m away points
+                    if_else(point == "D" | point =="E" |
+                              point =="F" | point == "F(X)", 400, #400m away points
+                    if_else(point == "G" | point =="H" | 
+                              point =="I" | point == "I(X)" |
+                              point == "J(X)" | point == "H(2)", 1600, 0)))) #1600m away points
 
 write_csv(BasalGap, "MOJA_Analysis/data/processed/BasalGap.csv")
 
