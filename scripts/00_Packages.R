@@ -6,6 +6,6 @@
 #-------------------------------------------------------------------------
 
 # Load packages
-packages<- c("tidyverse", "readr", "readxl", "janitor", "lme4", "glmmTMB", "DHARMa")
+packages<- c("tidyverse", "readxl", "janitor", "lme4", "glmmTMB", "DHARMa")
 
 pacman::p_load(packages, character.only = TRUE)
