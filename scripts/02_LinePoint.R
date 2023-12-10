@@ -7,7 +7,7 @@
 
 # PART 0: Import Line Point Intercept Data ####
 
-LinePoint <- read_csv("MOJA_Analysis/data/processed/LinePoint.csv")
+LinePoint <- read_csv("data/processed/LinePoint.csv")
 
 # PART 1: Percent Cover of Litter ---------------------------------------------
 
