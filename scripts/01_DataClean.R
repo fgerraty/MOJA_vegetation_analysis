@@ -122,6 +122,27 @@ write_csv(LinePoint, "data/processed/LinePoint.csv")
 CanopyGap <- CanopyGap_Raw %>% 
   clean_names() %>% #clean names
   select(well:end_m) %>% #remove non-relevant columns
+  
+  #Calculate gap size, proportion of transect, and make variables to determine whether the gap fits lumped gap size groupings
+  mutate(
+    gap_size = end_m - start_m,
+    portion_transect = gap_size / 50,
+    gap_size_25cm = gap_size >= 0.25,
+    gap_size_50cm = gap_size >= 0.5,
+    gap_size_1m = gap_size >= 1,
+    gap_size_2m = gap_size >= 2 ) %>%
+  
+  #Group by transect
+  group_by(well, point, transect) %>%
+  #Calculate percent of each transect in each gap size grouping
+  summarize(
+    percent_transect_25cm_gaps = sum(portion_transect[gap_size_25cm]),
+    percent_transect_50cm_gaps = sum(portion_transect[gap_size_50cm]),
+    percent_transect_1m_gaps = sum(portion_transect[gap_size_1m]),
+    percent_transect_2m_gaps = sum(portion_transect[gap_size_2m]), 
+    .groups = "drop") %>% 
+  
+  #Add distance from well based on point name
   mutate(distance = if_else(point == "A" | point == "B" | 
                               point =="C" | point == "A(X)" | 
                               point == "C(X)", 100, #100m away points
@@ -131,12 +152,39 @@ CanopyGap <- CanopyGap_Raw %>%
                               point =="I" | point == "I(X)" |
                               point == "J(X)" | point == "H(2)", 1600, 0)))) #1600m away points
 
+#Export summarized CanopyGap dataset
 write_csv(CanopyGap, "data/processed/CanopyGap.csv")
 
-### Clean BasalGap dataset and export ####
+
+
+####################################################
+# PART 4: Clean and Summarize BasalGap Dataset ####
+####################################################
+
 BasalGap <- BasalGap_Raw %>% 
   clean_names() %>%  #clean names
   select(well:end_m) %>% #remove non-relevant columns
+  
+  #Calculate gap size, proportion of transect, and make variables to determine whether the gap fits lumped gap size groupings
+  mutate(
+    gap_size = end_m - start_m,
+    portion_transect = gap_size / 50,
+    gap_size_25cm = gap_size >= 0.25,
+    gap_size_50cm = gap_size >= 0.5,
+    gap_size_1m = gap_size >= 1,
+    gap_size_2m = gap_size >= 2 ) %>%
+  
+  #Group by transect
+  group_by(well, point, transect) %>%
+  #Calculate percent of each transect in each gap size grouping
+  summarize(
+    percent_transect_25cm_gaps = sum(portion_transect[gap_size_25cm]),
+    percent_transect_50cm_gaps = sum(portion_transect[gap_size_50cm]),
+    percent_transect_1m_gaps = sum(portion_transect[gap_size_1m]),
+    percent_transect_2m_gaps = sum(portion_transect[gap_size_2m]), 
+    .groups = "drop") %>% 
+  
+  #Add distance from well based on point name
   mutate(distance = if_else(point == "A" | point == "B" | 
                               point =="C" | point == "A(X)" | 
                               point == "C(X)", 100, #100m away points
@@ -146,13 +194,22 @@ BasalGap <- BasalGap_Raw %>%
                               point =="I" | point == "I(X)" |
                               point == "J(X)" | point == "H(2)", 1600, 0)))) #1600m away points
 
+#Export csv
 write_csv(BasalGap, "data/processed/BasalGap.csv")
 
 
 
+########################################################
+# PART 5: Clean and Summarize Perennials Dataset #######
+########################################################
+
 ### Clean PerennialDens dataset and export ####
-PerennialDens <- PerennialDens_Raw %>% 
+Perennials <- PerennialDens_Raw %>% 
   clean_names()
+
+########################################################
+# PART 5: Clean and Summarize Annuals Dataset ##########
+########################################################
 
 ### Clean Annuals dataset and export ####
 Annuals <- Annuals_Raw %>% 
