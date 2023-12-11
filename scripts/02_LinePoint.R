@@ -2,7 +2,7 @@
 # MOJA Vegetation Analysis Project #######################################
 # Author: Frankie Gerraty (frankiegerraty@gmail.com; fgerraty@ucsc.edu) ##
 ##########################################################################
-# LinePoint Preliminary Analysis v. 1 
+# Script 2: LinePoint Analyses ###########################################
 # -----------------------------------------------------------------------------
 
 # PART 0: Import Line Point Intercept Data ####
@@ -13,35 +13,24 @@ LinePoint <- read_csv("data/processed/LinePoint.csv")
 
 # Question: Does the percent cover of leaf litter vary with distance to well (water source)?
 
-## Create new dataframe "litter" for litter analysis
-Litter <- LinePoint %>%  
-  select(well:transect, distance, interval, code1:code4) %>% #select for only relevant columns
-  group_by(well, point, transect, distance, interval) %>% #Group by well, transect, point, interval
-  #Score as 1 or 0 based on presence/absence of litter at any of the levels (code 1-4)
-  mutate(litter_presence = if_else(code1 == "L" |
-                                     code2 == "L" |
-                                     code3 == "L" |
-                                     code4 == "L", 1, 0, missing = 0)) %>% 
-  mutate(distance = distance/100)%>% #Divide by to rescale variables for GLMM analyses
-  ungroup() #Drop groups
-
-#Turn into dataframe (required for glmer)
-Litter <- data.frame(Litter)
+#First, take a look at the distribution of the data and check for normality
+ggplot(LinePoint, aes(x=litter_cover))+
+  geom_histogram()
+shapiro.test(LinePoint$litter_cover) #Yes, it is just within the threshold of normality
 
 
-#Create model f1. 
-f1 <- glmmTMB(litter_presence ~ distance + 
-              (1|well/point/transect), #Random effects of well, point, transect (nested)
-            family = "binomial", #binomial distribution (0/1) data
-            data = Litter)
+#Create a linear mixed effects model (normal distribution)
+f1 <- lme(litter_cover ~ distance, 
+          random = ~1|well/point, #Random effects of well, point (nested)
+          data = LinePoint)
 summary(f1)
 
-# Check f1 assumptions with DHARMa package
-f1_res = simulateResiduals(f1)
-plot(f1_res, rank = T)
-testDispersion(f1_res)
-plotResiduals(f1, form = Litter$distance, main=NULL)
 
+#Check assumptions
+plot(f1)
+qqnorm(f1, ~ranef(., level=1))
+qqnorm(f1, ~ranef(., level=2))
+qqnorm(resid(f1))
 
 
 # PART 2: Percent Cover of woody plants ----------------------------------------
@@ -58,65 +47,43 @@ plotResiduals(f1, form = Litter$distance, main=NULL)
 
 # PART 3: Percent Cover of B. rubens & Schizmus --------------------------------
 
-SelectPlants <- LinePoint %>%  #Create new dataframe "SelectPlants" for percent cover analysis
-  select(well:transect, distance, interval, species, code1:code4) %>% #select for only relevant columns
-  group_by(well, point, transect, distance, interval) %>% #Group 
-  #Score as 1 or 0 based on presence/absence of B. rubens & Schizmus at any of the levels (code 1-4)
-  mutate(SelectPlant_presence = if_else(species %in% c("Schismus barbatus", "Bromus madridentis") |
-                                          code1 %in% c("Schismus barbatus", "Bromus madridentis") |
-                                          code2 %in% c("Schismus barbatus", "Bromus madridentis") |
-                                          code3 %in% c("Schismus barbatus", "Bromus madridentis") |
-                                          code4 %in% c("Schismus barbatus", "Bromus madridentis"), 1, 0, missing = 0)) %>%   
-  mutate(distance = distance/100)%>% #Divide by to rescale variables for GLMM analyses
-  ungroup() #Drop groups
+
+
+#First, take a look at the distribution of the data and check for normality
+ggplot(LinePoint, aes(x=selected_plant_cover))+
+  geom_histogram()
+
+LinePoint <- LinePoint %>% 
+  mutate(distance_rescaled = distance/100)
 
 
 #Create model f3. 
-f3 <- glmmTMB(SelectPlant_presence ~ distance + 
-              (1|well/point/transect), #Random effects of well, point, transect (nested)
-            family = "binomial", #binomial distribution (0/1) data
-            data = SelectPlants)
+f3 <- glmer.nb(selected_plant_cover ~ distance_rescaled + 
+                (1|well/point), #Random effects of well, point, transect (nested)
+              data = LinePoint)
 summary(f3)
 
 
-# Check f3 assumptions with DHARMa package
+# Check f3 assumptions with DHARMa package = ERRORS
 f3_res = simulateResiduals(f3, n=1000)
 plot(f3_res, rank = T) 
 testDispersion(f3_res)
-plotResiduals(f3, form = SelectPlants$distance, main=NULL)
+plotResiduals(f3, form = LinePoint$selected_plant_cover, main=NULL)
 
 
 # PART 4: Percent Cover of all invasive plants --------------------------------
 
-InvasivePlants <- LinePoint %>%  #Create new dataframe "InvasivePlants" for percent cover analysis
-  select(well:transect, distance, interval, species, code1:code4) %>% #select for only relevant columns
-  group_by(well, point, transect, distance, interval) %>% #Group 
-  #Score as 1 or 0 based on presence/absence of invasive plants (Descurainia spp., Schismus barbatus, Bromus madritentis, Erodium cicutarium) at any of the levels (code 1-4)
-  mutate(InvasivePlant_presence = 
-           if_else(species %in% c("Descurainia species", "Descurainia (pinnata)",
-                                  "Schismus barbatus", "Bromus madridentis", 
-                                  "Erodium cicutarium") |
-                     code1 %in% c("Descurainia species", "Descurainia (pinnata)",
-                                  "Schismus barbatus", "Bromus madridentis", 
-                                  "Erodium cicutarium") |
-                     code2 %in% c("Descurainia species", "Descurainia (pinnata)",
-                                  "Schismus barbatus", "Bromus madridentis", 
-                                  "Erodium cicutarium") |
-                     code3 %in% c("Descurainia species", "Descurainia (pinnata)",
-                                  "Schismus barbatus", "Bromus madridentis", 
-                                  "Erodium cicutarium") |
-                     code4 %in% c("Descurainia species", "Descurainia (pinnata)",
-                                  "Schismus barbatus", "Bromus madridentis", 
-                                  "Erodium cicutarium"), 1, 0, missing = 0)) %>%  
-  mutate(distance = distance/100) #Divide by 100 to rescale variables for GLMM analyses
-.groups = "drop"#Drop groups
+#First, take a look at the distribution of the data and check for normality
+ggplot(LinePoint, aes(x=invasive_plant_cover))+
+  geom_histogram()
 
 
 #Create model f4.
-f4 <- glmmTMB(InvasivePlant_presence ~ distance + 
-              (1|well/point/transect), #Random effects of well, point (nested)
-            family = binomial(), #binomial distribution (0/1) data
-            data = InvasivePlants)
+f4 <- glmmTMB(invasive_plant_cover ~ distance + 
+                (1|well/point), #Random effects of well, point (nested)
+              ziformula=~1,
+              family=nbinom2, #binomial distribution (0/1) data
+              data = LinePoint)
 summary(f4)
 
 
@@ -124,7 +91,8 @@ summary(f4)
 f4_res = simulateResiduals(f4)
 plot(f4_res, rank = T) 
 testDispersion(f4_res)
-plotResiduals(f4, form = InvasivePlants$distance, main=NULL)
+plotResiduals(f4, form = LinePoint$distance, main=NULL)
+
 
 # PART 5: % cover of native grasses ---------------------------------------
 
@@ -160,9 +128,9 @@ CanopyCover <- LinePoint %>%
 
 #Create model f6. NEED TO RECTIFY MODEL FIT ERRORS
 f6 <- glmmTMB(CanopyCover_presence ~ distance + 
-              (1|well/point/transect), #Random effects of well, point, transect (nested)
-            family = "binomial", #binomial distribution (0/1) data
-            data = CanopyCover)
+                (1|well/point/transect), #Random effects of well, point, transect (nested)
+              family = "binomial", #binomial distribution (0/1) data
+              data = CanopyCover)
 summary(f6)
 
 # Check f6 assumptions with DHARMa package
