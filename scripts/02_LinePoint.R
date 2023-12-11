@@ -145,6 +145,11 @@ plotResiduals(f6, form = LinePoint$distance, main=NULL)
 ggplot(LinePoint, aes(x=all_cover))+
   geom_histogram()
 
+ggplot(LinePoint, aes(y=all_cover, x=distance))+
+  geom_jitter(width = 5)+
+  stat_smooth(method = "glm")
+
+
 #Create model f7. Need to check distribution assumptions, double check, etc.
 f7 <- glmmTMB(all_cover ~ distance, #+ 
 #              (1|well/point), #Random effects of well, point, transect (nested)

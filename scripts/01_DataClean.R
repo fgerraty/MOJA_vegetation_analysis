@@ -204,8 +204,17 @@ write_csv(BasalGap, "data/processed/BasalGap.csv")
 ########################################################
 
 ### Clean PerennialDens dataset and export ####
-Perennials <- PerennialDens_Raw %>% 
+Perennials_plants <- PerennialDens_Raw %>% 
+  clean_names() %>% 
+  mutate_at("number", ~ ifelse(. == "msg", NA, .)) %>% 
+  mutate(number = as.numeric(number)) %>% 
+  group_by(well, point, distance, transect, species) %>% 
+  summarise(total_count = sum(number))
+
+Perennials_not_plants <- PerennialDens_Raw %>% 
   clean_names()
+  
+
 
 ########################################################
 # PART 5: Clean and Summarize Annuals Dataset ##########

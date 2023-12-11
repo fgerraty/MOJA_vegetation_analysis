@@ -8,17 +8,34 @@ CanopyGap <- read_csv("data/processed/CanopyGap.csv")
 ## Analyze Canopy Gap Dataset ####
 
 CanopyGap <- CanopyGap %>% 
-  mutate(percent_transect_2m_gaps = 1-percent_transect_2m_gaps, 
-         percent_transect_1m_gaps = 1-percent_transect_1m_gaps,
-         percent_transect_50cm_gaps = 1-percent_transect_50cm_gaps,
-         percent_transect_25cm_gaps = 1-percent_transect_25cm_gaps)
+  # transform data to remove 0 and 1 values as per Smithson, M., & Verkuilen, J. (2006)
+  # https://doi.org/10.1037/1082-989X.11.1.54
+  mutate(percent_transect_2m_gaps = (percent_transect_2m_gaps * (199-1) + 0.05)/199, 
+         percent_transect_1m_gaps = (percent_transect_1m_gaps * (199-1) + 0.05)/199,
+         percent_transect_50cm_gaps = (percent_transect_50cm_gaps * (199-1) + 0.05)/199,
+         percent_transect_25cm_gaps = (percent_transect_25cm_gaps * (199-1) + 0.05)/199)
+  
+
+#First, take a look at the distribution of the data
+ggplot(CanopyGap, aes(x=percent_transect_2m_gaps))+
+  geom_histogram()
+ggplot(CanopyGap, aes(x=percent_transect_1m_gaps))+
+  geom_histogram()
+ggplot(CanopyGap, aes(x=percent_transect_50cm_gaps))+
+  geom_histogram()
+ggplot(CanopyGap, aes(x=percent_transect_25cm_gaps))+
+  geom_histogram()
+
+
+
+
 
 
 #2m gap glmm : NOTE model errors
-cg1 <- glmmTMB(percent_transect_2m_gaps ~ distance + 
-                 (1|well/point), #Random effects of well, point
-               ziformula= ~1,
-               family = beta_family(),
+cg1 <- glmmTMB(percent_transect_2m_gaps ~ distance, + 
+#              (1|well/point), #Random effects of well, point
+#              ziformula= ~1,
+               family = Gamma,
                data = CanopyGap)
 summary(cg1)
 
@@ -31,10 +48,10 @@ plotResiduals(cg1, form = CanopyGap$distance, main=NULL)
 
 
 # 1m gap GLMM
-cg2 <- glmmTMB(percent_transect_1m_gaps ~ distance + 
-                 (1|well/point), #Random effects of well, point
+cg2 <- glmmTMB(percent_transect_1m_gaps ~ distance,# + 
+#                 (1|well/point), #Random effects of well, point
                family = beta_family(),
-               data = CanopyGapSummary)
+               data = CanopyGap)
 summary(cg2)
 
 
@@ -47,10 +64,10 @@ plotResiduals(cg2, form = CanopyGapSummary$distance, main=NULL)
 
 
 # 50cm gap GLMM
-cg3 <- glmmTMB(percent_transect_50cm_gaps ~ distance + 
-                 (1|well/point), #Random effects of well, point
+cg3 <- glmmTMB(percent_transect_50cm_gaps ~ distance,# + 
+             #    (1|well/point), #Random effects of well, point
                family = beta_family(),
-               data = CanopyGapSummary)
+               data = CanopyGap)
 summary(cg3)
 
 
