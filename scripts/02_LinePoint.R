@@ -7,7 +7,8 @@
 
 # PART 0: Import Line Point Intercept Data ####
 
-LinePoint <- read_csv("data/processed/LinePoint.csv")
+LinePoint <- read_csv("data/processed/LinePoint.csv") %>% 
+  mutate(distance_rescaled = distance/100)
 
 # PART 1: Percent Cover of Litter ---------------------------------------------
 
@@ -25,11 +26,27 @@ f1 <- lme(litter_cover ~ distance,
           data = LinePoint)
 summary(f1)
 
+#Try with poisson
+fx <- glmer(litter_cover ~ distance_rescaled +
+              (1|well/point), #Random effects of well, point)
+            family = poisson(link = "log"),
+            data = LinePoint)
+
+summary(fx)
+
+
+# Check f3 assumptions with DHARMa package
+fx_res = simulateResiduals(fx, n=1000)
+plot(fx_res, rank = T) 
+testDispersion(fx_res)
+plotResiduals(fx, form = LinePoint$distance, main=NULL)
+
+
 
 #Check assumptions
-plot(f1)
-qqnorm(resid(f1))
-qqnorm(f1, ~ranef(., level=1))
+plot(fx)
+qqnorm(resid(fx))
+qqnorm(fx, ~ranef(., level=1))
 qqnorm(f1, ~ranef(., level=2))
 
 # PART 2: Percent Cover of woody plants ----------------------------------------
@@ -52,7 +69,7 @@ ggplot(LinePoint, aes(x=selected_plant_cover))+
 
 
 #Create model f3. 
-f3 <- glmmTMB(selected_plant_cover ~ distance_rescaled + 
+f3 <- glmmTMB(selected_plant_cover ~ distance + 
                 (1|well/point), #Random effects of well, point, transect (nested)
               ziformula=~1,
               family=nbinom2,
@@ -60,11 +77,11 @@ f3 <- glmmTMB(selected_plant_cover ~ distance_rescaled +
 summary(f3)
 
 
-# Check f3 assumptions with DHARMa package = ERRORS
+# Check f3 assumptions with DHARMa package
 f3_res = simulateResiduals(f3, n=1000)
 plot(f3_res, rank = T) 
 testDispersion(f3_res)
-plotResiduals(f3, form = LinePoint$selected_plant_cover, main=NULL)
+plotResiduals(f3, form = LinePoint$distance, main=NULL)
 
 
 # PART 4: Percent Cover of all invasive plants --------------------------------
@@ -105,46 +122,39 @@ plotResiduals(f4, form = LinePoint$distance, main=NULL)
 #First, take a look at the distribution of the data
 ggplot(LinePoint, aes(x=canopy_cover))+
   geom_histogram()
+shapiro.test(LinePoint$canopy_cover) #No, it is not normal
 
-#Create model f6. NEED TO RECTIFY MODEL FIT ERRORS
+#Create model f6.
 
-
+f6 <- glmmTMB(canopy_cover ~ distance + 
+                (1|well/point), #Random effects of well, point (nested)
+              family=nbinom1, #binomial distribution (0/1) data
+              data = LinePoint)
+summary(f6)
 
 # Check f6 assumptions with DHARMa package
 f6_res = simulateResiduals(f6, n=1000)
 plot(f6_res, rank = T) 
 testDispersion(f6_res)
-plotResiduals(f6, form = CanopyCover$distance, main=NULL)
+plotResiduals(f6, form = LinePoint$distance, main=NULL)
 #NOTE: DHARMa throws an error that there are may be problems with model fit.  
 
 
 # PART 7: Total percent cover of vegetation (dead or alive) --------------------
 
-TotalCover <- LinePoint %>%  
-  select(well:transect, distance, interval, species, code1:code4) %>% #select for only relevant columns
-  group_by(well, point, transect, distance, interval) %>% #Group 
-  #Score as 1 or 0 based on presence/absence of any vegetation (dead or alive)
-  mutate(species = na_if(species, "none")) %>% 
-  mutate(TotalCover_presence = if_else(species %in% surface_codes &
-                                         code1 %in% surface_codes &
-                                         code2 %in% surface_codes &
-                                         code3 %in% surface_codes &
-                                         code4 %in% surface_codes,
-                                       0, 1, missing = 0)) %>% 
-  mutate(distance = distance/100)%>% #Divide by to rescale variables for GLMM analyses
-  ungroup() #Drop groups
+ggplot(LinePoint, aes(x=all_cover))+
+  geom_histogram()
 
 #Create model f7. Need to check distribution assumptions, double check, etc.
-f7 <- glmer(TotalCover_presence ~ distance + 
-              (1|well/point/transect), #Random effects of well, point, transect (nested)
-            family = "binomial", #binomial distribution (0/1) data
-            data = TotalCover)
+f7 <- glmmTMB(all_cover ~ distance, #+ 
+#              (1|well/point), #Random effects of well, point, transect (nested)
+            family = nbinom2, 
+            data = LinePoint)
 summary(f7)
-
 
 # Check f7 assumptions with DHARMa package
 f7_res = simulateResiduals(f7, n=1000)
 plot(f7_res, rank = T) 
 testDispersion(f7_res)
-plotResiduals(f7, form = TotalCover$distance, main=NULL)
+plotResiduals(f7, form = LinePoint$distance, main=NULL)
 #NOTE: DHARMa throws an error that there are may be problems with model fit.  
